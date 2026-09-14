@@ -1,0 +1,271 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأدمن | مجموعة أحمد الأعرجي (SWP)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <header class="bg-gray-900 text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center flex-wrap gap-3">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-shield-alt text-sky-400"></i> لوحة تحكم الإدارة (SWP)
+            </h1>
+            <div class="flex items-center gap-3">
+                <a href="index.html" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">
+                    <i class="fas fa-external-link-alt ml-1"></i> عرض الموقع الرئيسي
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-5xl">
+        
+        <!-- التبويبات (البرامج والمنتجات / طلبات العملاء) -->
+        <div class="flex gap-3 mb-6 border-b border-gray-300 pb-4">
+            <button onclick="switchTab('products')" id="tabProductsBtn" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition">
+                <i class="fas fa-boxes ml-1"></i> إدارة البرامج والمنتجات
+            </button>
+            <button onclick="switchTab('orders')" id="tabOrdersBtn" class="bg-white text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition">
+                <i class="fas fa-clipboard-list ml-1"></i> طلبات وعروض العملاء <span id="ordersBadge" class="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs mr-1">0</span>
+            </button>
+        </div>
+
+        <!-- قسم إدارة المنتجات والبرامج -->
+        <div id="productsSection" class="space-y-8">
+            <!-- نموذج إضافة منتج جديد -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">إضافة برنامج أو منتج جديد</h2>
+                <form id="product-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">اسم البرنامج</label>
+                        <input type="text" id="name" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">اختر صورة البرنامج من جهازك</label>
+                        <input type="file" id="image_file" accept="image/*" class="w-full border rounded-lg p-2 bg-gray-50 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">وصف مختصر (يظهر في البطاقة الرئيسية)</label>
+                        <input type="text" id="short_desc" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">سعر الكاش</label>
+                        <input type="text" id="cash_price" placeholder="مثال: 5000 جنيه" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">خطة التقسيط</label>
+                        <input type="text" id="installment_plan" placeholder="مثال: مقدم 50% والباقي على 3 شهور" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">الشرح التفصيلي والمميزات</label>
+                        <textarea id="features" rows="4" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="اكتب مميزات وتفاصيل البرنامج هنا..."></textarea>
+                    </div>
+                    
+                    <!-- زر الحفظ والإضافة -->
+                    <div class="md:col-span-2 mt-4">
+                        <button type="submit" style="background-color: #16a34a; color: #ffffff !important;" class="w-full hover:bg-green-700 font-extrabold py-3 px-6 rounded-xl transition shadow-lg text-center cursor-pointer text-base flex items-center justify-center gap-2">
+                            <i class="fas fa-plus-circle"></i> حفظ وإضافة البرنامج للموقع
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- قائمة البرامج الحالية للحذف أو المتابعة -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">البرامج الحالية في النظام</h2>
+                <div id="admin-products-list" class="space-y-4">
+                    <!-- يتم تحميل المنتجات هنا -->
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم طلبات وعروض العملاء -->
+        <div id="ordersSection" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b flex-wrap gap-2">
+                    <h2 class="text-xl font-bold text-gray-900">طلبات وعروض الأسعار الواردة من العملاء</h2>
+                    <button onclick="clearClientOrders()" class="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">
+                        <i class="fas fa-trash-alt ml-1"></i> مسح جميع الطلبات
+                    </button>
+                </div>
+                <div id="clientOrdersContainer" class="space-y-4">
+                    <!-- يتم عرض طلبات العملاء هنا -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://ukvvxiiokanxkmqudqhe.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MkaOKmxctRyVZTgPdeVWSw_fjZzqNex';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // التنقل بين التبويبات
+        function switchTab(tab) {
+            if (tab === 'products') {
+                document.getElementById('productsSection').classList.remove('hidden');
+                document.getElementById('ordersSection').classList.add('hidden');
+                document.getElementById('tabProductsBtn').className = "bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition";
+                document.getElementById('tabOrdersBtn').className = "bg-white text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition";
+            } else {
+                document.getElementById('ordersSection').classList.remove('hidden');
+                document.getElementById('productsSection').classList.add('hidden');
+                document.getElementById('tabOrdersBtn').className = "bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition";
+                document.getElementById('tabProductsBtn').className = "bg-white text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow cursor-pointer transition";
+                loadClientOrders();
+            }
+        }
+
+        // جلب المنتجات
+        async function loadAdminProducts() {
+            const { data, error } = await supabaseClient.from('products').select('*');
+            const listContainer = document.getElementById('admin-products-list');
+            listContainer.innerHTML = '';
+
+            if (error || !data || data.length === 0) {
+                listContainer.innerHTML = `<p class="text-gray-500 text-center py-4 text-sm">لا توجد برامج مضافة حتى الآن.</p>`;
+                return;
+            }
+
+            data.forEach(p => {
+                listContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200 flex-wrap gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${p.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&auto=format&fit=crop&q=80'}" class="w-12 h-12 object-cover rounded-lg shadow-sm">
+                            <div>
+                                <h3 class="font-bold text-base text-gray-900">${p.name}</h3>
+                                <p class="text-xs text-gray-600">كاش: ${p.cash_price || 'غير محدد'} | تقسيط: ${p.installment_plan || 'غير محدد'}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteProduct(${p.id})" class="bg-red-500 hover:bg-red-600 text-white px-3.5 py-1.5 rounded-lg text-xs transition cursor-pointer font-bold">
+                            <i class="fas fa-trash ml-1"></i> حذف
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // إضافة منتج جديد
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const short_desc = document.getElementById('short_desc').value;
+            const cash_price = document.getElementById('cash_price').value;
+            const installment_plan = document.getElementById('installment_plan').value;
+            const features = document.getElementById('features').value;
+            const imageFile = document.getElementById('image_file').files[0];
+
+            let imageUrl = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80';
+
+            if (imageFile) {
+                const fileName = `product_${Date.now()}_${imageFile.name}`;
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+
+                if (uploadError) {
+                    alert('ملاحظة: لرفع الصور مباشرة من الجهاز، تأكد من إنشاء Storage Bucket في Supabase باسم "product-images" وجعله Public. سيتم استخدام الصورة الافتراضية مؤقتًا.');
+                } else {
+                    const { data: publicURLData } = supabaseClient.storage
+                        .from('product-images')
+                        .getPublicUrl(fileName);
+                    imageUrl = publicURLData.publicUrl;
+                }
+            }
+
+            const newProduct = {
+                name,
+                image_url: imageUrl,
+                short_desc,
+                cash_price,
+                installment_plan,
+                features,
+                full_desc: features
+            };
+
+            const { error } = await supabaseClient.from('products').insert([newProduct]);
+
+            if (error) {
+                alert('حدث خطأ أثناء الإضافة: ' + error.message);
+            } else {
+                alert('تم إضافة البرنامج بنجاح!');
+                document.getElementById('product-form').reset();
+                loadAdminProducts();
+            }
+        });
+
+        async function deleteProduct(id) {
+            if (!confirm('هل أنت متأكد من رغبتك في حذف هذا البرنامج؟')) return;
+
+            const { error } = await supabaseClient.from('products').delete().eq('id', id);
+            if (error) {
+                alert('خطأ أثناء الحذف: ' + error.message);
+            } else {
+                loadAdminProducts();
+            }
+        }
+
+        // عرض طلبات العملاء من LocalStorage
+        function loadClientOrders() {
+            const orders = JSON.parse(localStorage.getItem('swp_client_orders') || '[]');
+            document.getElementById('ordersBadge').innerText = orders.length;
+            const container = document.getElementById('clientOrdersContainer');
+            container.innerHTML = "";
+
+            if (orders.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-6 text-sm">لا توجد طلبات أو عروض واردة من العملاء حتى الآن.</p>`;
+                return;
+            }
+
+            orders.forEach((ord, index) => {
+                const itemsList = ord.items.map(i => `<span class="bg-blue-50 text-blue-800 text-xs px-2.5 py-1 rounded-md font-semibold">${i.name} (${i.cash_price || 'سعر حر'})</span>`).join(' ');
+                
+                container.innerHTML += `
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                        <div class="flex justify-between items-start flex-wrap gap-2">
+                            <div>
+                                <span class="bg-green-100 text-green-800 font-bold text-xs px-2.5 py-1 rounded-full">طلب #${index + 1}</span>
+                                <h4 class="text-base font-bold text-gray-900 mt-2">🏢 اسم الشركة: ${ord.company}</h4>
+                            </div>
+                            <span class="text-xs text-gray-500">${ord.date}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-100">
+                            <div>👤 <strong>المسؤول:</strong> ${ord.name}</div>
+                            <div>📞 <strong>الهاتف:</strong> <a href="https://wa.me/${ord.phone}" target="_blank" class="text-green-600 font-bold hover:underline">${ord.phone} <i class="fab fa-whatsapp"></i></a></div>
+                            <div>💰 <strong>السعر المقترح:</strong> <span class="text-blue-700 font-bold">${ord.proposedPrice || 'لم يحدد'}</span></div>
+                        </div>
+
+                        <div class="text-sm text-gray-600">
+                            📍 <strong>العنوان:</strong> ${ord.address}
+                        </div>
+
+                        <div class="pt-2 border-t border-gray-200">
+                            <span class="text-xs font-bold text-gray-700 block mb-1">المنتجات المطلوبة:</span>
+                            <div class="flex flex-wrap gap-2">${itemsList}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function clearClientOrders() {
+            if (!confirm('هل تريد مسح جميع طلبات العملاء المسجلة؟')) return;
+            localStorage.removeItem('swp_client_orders');
+            loadClientOrders();
+        }
+
+        // تشغيل التحميل عند فتح الصفحة
+        loadAdminProducts();
+        const initialOrders = JSON.parse(localStorage.getItem('swp_client_orders') || '[]');
+        document.getElementById('ordersBadge').innerText = initialOrders.length;
+    </script>
+</body>
+</html>
