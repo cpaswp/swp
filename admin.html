@@ -1,0 +1,377 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الإدارية - مجموعة أحمد الأعرجي SWP</title>
+    <!-- مكتبة Tailwind CSS الإصدار الرابع -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Font Awesome الأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #07090e; color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    </style>
+</head>
+<body class="selection:bg-sky-500 selection:text-white">
+
+    <!-- شاشة التحقق وحماية الأدمن (تظهر حصرياً عند الدخول ولم يتم التحقق) -->
+    <div id="authScreen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
+            <div class="w-16 h-16 bg-sky-500/10 text-sky-400 rounded-2xl border border-sky-500/20 flex items-center justify-center mx-auto mb-5 text-2xl shadow-inner">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h2 class="text-xl font-black text-white mb-2">منطقة محمية - لوحة تحكم الأدمن</h2>
+            <p class="text-slate-400 text-xs mb-6 leading-relaxed">لأسباب أمنية، يرجى توليد رمز التحقق وإرساله إلى رقم الواتساب <strong>00201115442307</strong> لتأكيد الدخول.</p>
+            
+            <div id="stepOneAuth">
+                <button onclick="requestAdminOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition text-xs shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-base"></i> اضغط لتوليد رمز التحقق عبر الواتساب
+                </button>
+            </div>
+
+            <div id="stepTwoAuth" class="hidden space-y-4">
+                <p class="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 p-3 rounded-xl leading-relaxed">
+                    تم توليد الرمز. انقر على الرابط أدناه لإرساله للرقم <strong>00201115442307</strong> عبر واتساب، ثم اكتب الرمز الذي ظهر لك في الخانة أدناه:
+                </p>
+                <a id="whatsappLink" href="#" target="_blank" class="block w-full bg-slate-800 hover:bg-slate-700 text-green-400 border border-slate-700 font-bold py-2.5 rounded-xl transition text-xs text-center shadow-md">
+                    <i class="fab fa-whatsapp"></i> فتح واتساب لإرسال الرمز الرقمي
+                </a>
+                <input type="text" id="otpInput" placeholder="أدخل رمز التحقق المكون من 4 أرقام" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-center text-white tracking-widest text-lg font-bold outline-none focus:ring-2 focus:ring-sky-500">
+                <button onclick="verifyAdminOtp()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-xl transition text-xs shadow-lg shadow-sky-600/30 cursor-pointer">
+                    تحقق والدخول لوحة التحكم
+                </button>
+            </div>
+            
+            <div class="mt-6 border-t border-slate-800 pt-4">
+                <a href="index.html" class="text-xs text-slate-400 hover:text-white transition"><i class="fas fa-arrow-right ml-1"></i> العودة للموقع الرئيسي</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- المحتوى الفعلي لوحة التحكم (مخفي تماماً ولا يتم تحميله إلا بعد إدخال الكود الصحيح) -->
+    <div id="adminMainContent" class="hidden">
+        <!-- شريط التنقل للوحة التحكم -->
+        <header class="bg-slate-950 border-b border-slate-800 py-4 px-6 sticky top-0 z-40 shadow-xl">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="bg-amber-400 text-slate-950 font-black text-xs px-2.5 py-1 rounded-lg">SWP</span>
+                    <h1 class="text-base md:text-lg font-black text-white">لوحة تحكم الإدارة والاستشارات</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="index.html" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                        <i class="fas fa-globe text-sky-400"></i> استعراض الموقع الرئيسي
+                    </a>
+                    <button onclick="logoutAdmin()" class="bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/80 px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> خروج
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-10">
+
+            <!-- تبويبات التنقل في لوحة التحكم -->
+            <div class="flex gap-3 mb-8 border-b border-slate-800 pb-4">
+                <button onclick="switchTab('products')" id="tabProductsBtn" class="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-lg shadow-sky-900/30">
+                    <i class="fas fa-boxes ml-1.5"></i> إدارة البرامج والحلول
+                </button>
+                <button onclick="switchTab('orders')" id="tabOrdersBtn" class="bg-slate-900 text-slate-400 border border-slate-800 hover:text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                    <i class="fas fa-shopping-cart ml-1.5"></i> طلبات وعروض أسعار الشركات (<span id="ordersBadge">0</span>)
+                </button>
+            </div>
+
+            <!-- قسم إدارة المنتجات -->
+            <div id="productsTabContent" class="space-y-10">
+                <!-- نموذج الإضافة / التعديل -->
+                <div class="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-sm shadow-xl">
+                    <h3 id="formTitle" class="text-xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-plus-circle text-sky-400"></i> إضافة نظام أو برنامج جديد للشركات
+                    </h3>
+                    <form id="productForm" onsubmit="handleProductSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="hidden" id="editProductId">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">اسم البرنامج / النظام:</label>
+                            <input type="text" id="pName" required placeholder="مثال: نظام إدارة المخازن والحسابات SWP" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">رابط الصورة (URL):</label>
+                            <input type="url" id="pImg" placeholder="https://images.unsplash.com/..." class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">السعر كاش:</label>
+                            <input type="text" id="pCash" placeholder="مثال: 15,000 جنيه مصري" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">خطة التقسيط:</label>
+                            <input type="text" id="pInstallment" placeholder="مثال: 50% مقدم والباقي على 3 أشهر" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">رابط ملف الـ PDF (اختياري - الكتالوج/الدليل):</label>
+                            <input type="url" id="pPdf" placeholder="https://example.com/catalog.pdf أو رابط ملف درايف" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">وصف مختصر:</label>
+                            <input type="text" id="pShortDesc" placeholder="نبذة سريعة تظهر في بطاقة المنتج الرئيسية" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">الوصف التفصيلي:</label>
+                            <textarea id="pFullDesc" rows="3" placeholder="تفاصيل وافية عن البرنامج..." class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">مميزات النظام (كل ميزة في سطر):</label>
+                            <textarea id="pFeatures" rows="3" placeholder="- تقارير مالية دقيقة&#10;- صلاحيات مستخدمين كاملة" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-sky-500 outline-none transition"></textarea>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button type="submit" id="saveBtn" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-sky-600/30 text-xs cursor-pointer flex items-center justify-center gap-2">
+                                <i class="fas fa-save"></i> حفظ البرنامج في النظام
+                            </button>
+                            <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3.5 rounded-xl font-bold transition text-xs cursor-pointer">
+                                إلغاء التعديل
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- قائمة البرامج الحالية -->
+                <div class="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-sm shadow-xl">
+                    <h3 class="text-xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-list-alt text-amber-400"></i> البرامج والحلول المسجلة حالياً
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-200 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">الصورة</th>
+                                    <th class="p-3.5">اسم البرنامج</th>
+                                    <th class="p-3.5">السعر كاش</th>
+                                    <th class="p-3.5">ملف PDF</th>
+                                    <th class="p-3.5 text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProductsTable" class="divide-y divide-slate-800/80">
+                                <!-- تُجلب البيانات ديناميكياً -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم طلبات الشركات -->
+            <div id="ordersTabContent" class="hidden space-y-6">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-sm shadow-xl">
+                    <h3 class="text-xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-clipboard-list text-emerald-400"></i> طلبات عروض الأسعار الواردة من الشركات
+                    </h3>
+                    <div id="adminOrdersContainer" class="space-y-4">
+                        <!-- تُجلب الطلبات من LocalStorage -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ربط Supabase والمنطق البرمجي والحماية -->
+    <script>
+        const SUPABASE_URL = 'https://ukvvxiiokanxkmqudqhe.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MkaOKmxctRyVZTgPdeVWSw_fjZzqNex';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let generatedOtp = '';
+
+        // التحقق الفوري عند فتح الصفحة
+        (function checkAdminAuth() {
+            if (sessionStorage.getItem('swp_admin_authenticated') === 'true') {
+                unlockAdminPanel();
+            }
+        })();
+
+        function requestAdminOtp() {
+            // توليد رقم عشوائي مكون من 4 أخان للإرسال
+            generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            const phoneNum = '00201115442307';
+            const msg = `مجموعة SWP - رمز دخول لوحة التحكم الخاص بك هو: ${generatedOtp}`;
+            
+            document.getElementById('whatsappLink').href = `https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}`;
+            document.getElementById('stepOneAuth').classList.add('hidden');
+            document.getElementById('stepTwoAuth').classList.remove('hidden');
+        }
+
+        function verifyAdminOtp() {
+            const userInput = document.getElementById('otpInput').value.trim();
+            if (userInput === generatedOtp && generatedOtp !== '') {
+                sessionStorage.setItem('swp_admin_authenticated', 'true');
+                unlockAdminPanel();
+            } else {
+                alert('رمز التحقق غير صحيح! يرجى إدخال الرقم الذي أرسلته عبر الواتساب بدقة.');
+            }
+        }
+
+        function unlockAdminPanel() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('adminMainContent').classList.remove('hidden');
+            initAdmin();
+        }
+
+        async function initAdmin() {
+            await fetchAdminProducts();
+            loadClientOrders();
+        }
+
+        function switchTab(tab) {
+            if (tab === 'products') {
+                document.getElementById('productsTabContent').classList.remove('hidden');
+                document.getElementById('ordersTabContent').classList.add('hidden');
+                document.getElementById('tabProductsBtn').className = "bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-lg shadow-sky-900/30";
+                document.getElementById('tabOrdersBtn').className = "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer";
+            } else {
+                document.getElementById('productsTabContent').classList.add('hidden');
+                document.getElementById('ordersTabContent').classList.remove('hidden');
+                document.getElementById('tabOrdersBtn').className = "bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-lg shadow-emerald-900/30";
+                document.getElementById('tabProductsBtn').className = "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer";
+            }
+        }
+
+        async function fetchAdminProducts() {
+            const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: false });
+            const tbody = document.getElementById('adminProductsTable');
+            tbody.innerHTML = "";
+
+            if (error || !data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">لا توجد برامج مضافة حالياً. (تأكد من إضافة عمود pdf_url في قاعدة بيانات Supabase إذا ظهرت مشكلة)</td></tr>`;
+                return;
+            }
+
+            data.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-950/50 transition">
+                        <td class="p-3.5"><img src="${p.image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&auto=format&fit=crop&q=80'}" class="w-10 h-10 object-cover rounded-lg border border-slate-800"></td>
+                        <td class="p-3.5 font-bold text-white">${p.name}</td>
+                        <td class="p-3.5 text-emerald-400 font-bold">${p.cash_price || 'غير محدد'}</td>
+                        <td class="p-3.5">${p.pdf_url ? `<a href="${p.pdf_url}" target="_blank" class="text-sky-400 hover:underline flex items-center gap-1"><i class="fas fa-file-pdf text-rose-400"></i> عرض الملف</a>` : '<span class="text-slate-500">لا يوجد</span>'}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="editProduct(${p.id}, '${escapeQuote(p.name)}', '${escapeQuote(p.short_desc)}', '${escapeQuote(p.full_desc)}', '${escapeQuote(p.cash_price)}', '${escapeQuote(p.installment_plan)}', '${escapeQuote(p.image_url)}', '${escapeQuote(p.pdf_url)}', '${escapeQuote(p.features)}')" class="bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white px-3 py-1.5 rounded-xl font-bold transition mr-1 cursor-pointer"><i class="fas fa-edit"></i> تعديل</button>
+                            <button onclick="deleteProduct(${p.id})" class="bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-1.5 rounded-xl font-bold transition cursor-pointer"><i class="fas fa-trash"></i> حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function escapeQuote(str) {
+            if (!str) return '';
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        async function handleProductSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('editProductId').value;
+            const productData = {
+                name: document.getElementById('pName').value,
+                short_desc: document.getElementById('pShortDesc').value,
+                full_desc: document.getElementById('pFullDesc').value,
+                cash_price: document.getElementById('pCash').value,
+                installment_plan: document.getElementById('pInstallment').value,
+                image_url: document.getElementById('pImg').value,
+                pdf_url: document.getElementById('pPdf').value,
+                features: document.getElementById('pFeatures').value
+            };
+
+            if (id) {
+                const { error } = await supabaseClient.from('products').update(productData).eq('id', id);
+                if (error) {
+                    alert('خطأ أثناء التعديل: ' + error.message);
+                } else {
+                    alert('تم تعديل البرنامج بنجاح!');
+                    resetForm();
+                    fetchAdminProducts();
+                }
+            } else {
+                const { error } = await supabaseClient.from('products').insert([productData]);
+                if (error) {
+                    alert('خطأ أثناء الإضافة: ' + error.message);
+                } else {
+                    alert('تم إضافة البرنامج بنجاح!');
+                    resetForm();
+                    fetchAdminProducts();
+                }
+            }
+        }
+
+        function editProduct(id, name, short_desc, full_desc, cash_price, installment_plan, image_url, pdf_url, features) {
+            document.getElementById('editProductId').value = id;
+            document.getElementById('pName').value = name;
+            document.getElementById('pShortDesc').value = short_desc === 'null' ? '' : short_desc;
+            document.getElementById('pFullDesc').value = full_desc === 'null' ? '' : full_desc;
+            document.getElementById('pCash').value = cash_price === 'null' ? '' : cash_price;
+            document.getElementById('pInstallment').value = installment_plan === 'null' ? '' : installment_plan;
+            document.getElementById('pImg').value = image_url === 'null' ? '' : image_url;
+            document.getElementById('pPdf').value = pdf_url === 'null' ? '' : pdf_url;
+            document.getElementById('pFeatures').value = features === 'null' ? '' : features;
+
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-edit text-sky-400"></i> تعديل بيانات البرنامج (رقم: ${id})`;
+            document.getElementById('saveBtn').innerHTML = `<i class="fas fa-save"></i> تحديث وحفظ التعديلات`;
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('productForm').reset();
+            document.getElementById('editProductId').value = '';
+            document.getElementById('formTitle').innerHTML = `<i class="fas fa-plus-circle text-sky-400"></i> إضافة نظام أو برنامج جديد للشركات`;
+            document.getElementById('saveBtn').innerHTML = `<i class="fas fa-save"></i> حفظ البرنامج في النظام`;
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('هل أنت متأكد من رغبتك في حذف هذا البرنامج نهائياً؟')) return;
+            const { error } = await supabaseClient.from('products').delete().eq('id', id);
+            if (error) {
+                alert('خطأ في الحذف: ' + error.message);
+            } else {
+                alert('تم الحذف بنجاح.');
+                fetchAdminProducts();
+            }
+        }
+
+        function loadClientOrders() {
+            let orders = JSON.parse(localStorage.getItem('swp_client_orders') || '[]');
+            document.getElementById('ordersBadge').innerText = orders.length;
+            const container = document.getElementById('adminOrdersContainer');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `<p class="text-center py-6 text-slate-400">لا توجد طلبات شركات واردة حتى الآن.</p>`;
+                return;
+            }
+
+            container.innerHTML = orders.map((ord, idx) => `
+                <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-white text-sm">شركة: ${ord.company} (<span class="text-sky-400">${ord.name}</span>)</span>
+                        <span class="text-slate-400 text-xs">${ord.date}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mb-2">📞 <strong>الهاتف:</strong> <a href="https://wa.me/${ord.phone}" target="_blank" class="text-green-400 hover:underline">${ord.phone}</a> | 📍 <strong>العنوان:</strong> ${ord.address}</p>
+                    ${ord.proposedPrice ? `<p class="text-xs text-amber-400 mb-2">💰 <strong>السعر المقترح من العميل:</strong> ${ord.proposedPrice}</p>` : ''}
+                    <div class="mt-3 bg-slate-900 p-3 rounded-xl border border-slate-800/80">
+                        <span class="block text-xs font-bold text-slate-200 mb-1">الأنظمة المطلوبة:</span>
+                        <ul class="list-disc list-inside text-xs text-slate-300 space-y-1">
+                            ${ord.items.map(it => `<li>${it.name} - <span class="text-emerald-400">${it.cash_price || ''}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('swp_admin_authenticated');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
